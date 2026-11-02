@@ -4,3 +4,4 @@ monitor.log
 cron.log
 # NOTE: state.json is intentionally COMMITTED so the GitHub Action can
 # remember stock between runs. Do not ignore it.
+monitor.env

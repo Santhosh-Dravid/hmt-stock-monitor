@@ -1,13 +1,10 @@
 {
   "poll_interval_seconds": 300,
-
   "telegram_bot_token": "",
-  "telegram_chat_id": "",
+  "telegram_chat_ids": [],
   "desktop_notification": true,
-
   "heartbeat_enabled": true,
   "heartbeat_hour": 9,
-
   "watchers": [
     {
       "name": "hmtwatches.store - For Him",

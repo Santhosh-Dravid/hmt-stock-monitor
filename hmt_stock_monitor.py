@@ -258,24 +258,56 @@ FETCHERS = {
 
 # ---------------- Notifications ----------------
 
+def _chat_ids(cfg: dict) -> list[str]:
+    """Return the list of Telegram chat ids to notify.
+
+    Accepts any of:
+      - telegram_chat_ids: ["id1", "id2"]  (list)
+      - telegram_chat_ids: "id1,id2"       (comma string)
+      - telegram_chat_id:  "id1"           (single, legacy)
+    Env HMT_TG_CHAT_ID may also be a comma-separated list.
+    """
+    ids: list[str] = []
+    multi = cfg.get("telegram_chat_ids")
+    if isinstance(multi, list):
+        ids += [str(x).strip() for x in multi]
+    elif isinstance(multi, str):
+        ids += [x.strip() for x in multi.split(",")]
+    single = cfg.get("telegram_chat_id")
+    if isinstance(single, str):
+        ids += [x.strip() for x in single.split(",")]
+    elif single:
+        ids.append(str(single).strip())
+    # de-dupe, drop blanks, preserve order
+    seen, out = set(), []
+    for i in ids:
+        if i and i not in seen:
+            seen.add(i)
+            out.append(i)
+    return out
+
+
 def notify_telegram(cfg: dict, text_html: str) -> bool:
     token = cfg.get("telegram_bot_token")
-    chat_id = cfg.get("telegram_chat_id")
-    if not token or not chat_id:
+    chat_ids = _chat_ids(cfg)
+    if not token or not chat_ids:
         return False
-    try:
-        r = requests.post(
-            f"https://api.telegram.org/bot{token}/sendMessage",
-            json={"chat_id": chat_id, "text": text_html, "parse_mode": "HTML",
-                  "disable_web_page_preview": False},
-            timeout=20,
-        )
-        if r.status_code == 200:
-            return True
-        log(f"Telegram error {r.status_code}: {r.text[:200]}")
-    except requests.RequestException as e:
-        log(f"Telegram request failed: {e}")
-    return False
+    any_ok = False
+    for cid in chat_ids:
+        try:
+            r = requests.post(
+                f"https://api.telegram.org/bot{token}/sendMessage",
+                json={"chat_id": cid, "text": text_html, "parse_mode": "HTML",
+                      "disable_web_page_preview": False},
+                timeout=20,
+            )
+            if r.status_code == 200:
+                any_ok = True
+            else:
+                log(f"Telegram error to {cid}: {r.status_code} {r.text[:150]}")
+        except requests.RequestException as e:
+            log(f"Telegram request failed for {cid}: {e}")
+    return any_ok
 
 
 def notify_desktop(cfg: dict, title: str, body: str) -> bool:
