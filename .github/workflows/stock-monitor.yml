@@ -1,0 +1,56 @@
+name: HMT stock monitor
+
+on:
+  schedule:
+    # Every 5 minutes. GitHub's minimum is 5 min and runs may be delayed
+    # under load — fine for restock alerts.
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}   # lets you run it manually from the Actions tab
+
+# Allow the workflow to commit the updated state.json back to the repo
+permissions:
+  contents: write
+
+concurrency:
+  # Never let two runs overlap (prevents state.json commit races)
+  group: hmt-stock-monitor
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run stock check
+        env:
+          HMT_TG_TOKEN: ${{ secrets.HMT_TG_TOKEN }}
+          HMT_TG_CHAT_ID: ${{ secrets.HMT_TG_CHAT_ID }}
+          HMT_DESKTOP_NOTIFICATION: "false"   # no desktop on a server
+        run: python hmt_stock_monitor.py --once
+
+      - name: Persist state
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain state.json)" ]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add state.json
+            git commit -m "chore: update stock state [skip ci]"
+            # retry push in case another run landed first
+            for i in 1 2 3; do
+              git pull --rebase --autostash && git push && break
+              sleep 3
+            done
+          else
+            echo "No state change."
+          fi

@@ -1,0 +1,26 @@
+{
+  "poll_interval_seconds": 300,
+
+  "telegram_bot_token": "",
+  "telegram_chat_id": "",
+  "desktop_notification": true,
+
+  "watchers": [
+    {
+      "name": "hmtwatches.store - For Him",
+      "type": "smartbiz",
+      "shop_id": 48236,
+      "division": "d8fe9089-07c3-4912-82d3-05984e295547",
+      "category_name": "For Him",
+      "page_size": 100,
+      "enabled": true
+    },
+    {
+      "name": "hmtwatches.in - Mens",
+      "type": "hmtwatches_in",
+      "gender_type": 1,
+      "load_more_count": 500,
+      "enabled": true
+    }
+  ]
+}

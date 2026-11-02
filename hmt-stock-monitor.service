@@ -1,0 +1,9 @@
+[Unit]
+Description=HMT Watches stock monitor (one-shot check)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/santhosh/santhosh/poc/hmt-stock-monitor
+ExecStart=/usr/bin/python3 /home/santhosh/santhosh/poc/hmt-stock-monitor/hmt_stock_monitor.py --once
