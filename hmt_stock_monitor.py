@@ -344,6 +344,8 @@ def main() -> int:
     ap.add_argument("--loop", action="store_true", help="run forever, polling on an interval")
     ap.add_argument("--once", action="store_true", help="single check (default)")
     ap.add_argument("--test-notify", action="store_true", help="send a test notification and exit")
+    ap.add_argument("--simulate-restock", action="store_true",
+                    help="send a SAMPLE restock alert using a real product (does not change state)")
     args = ap.parse_args()
 
     cfg = load_config()
@@ -353,6 +355,35 @@ def main() -> int:
         ok_dt = notify_desktop(cfg, "HMT Stock Monitor", "Test notification — desktop is working.")
         log(f"Test notify: telegram={ok_tg} desktop={ok_dt}")
         return 0 if (ok_tg or ok_dt) else 1
+
+    if args.simulate_restock:
+        # Pull one REAL product from the first enabled watcher and pretend it
+        # just restocked, so you see exactly what a real alert looks like.
+        # State is NOT touched, so your live monitoring is unaffected.
+        watchers = [w for w in cfg.get("watchers", []) if w.get("enabled", True)]
+        sample = None
+        wname = "simulation"
+        for w in watchers:
+            fetcher = FETCHERS.get(w.get("type"))
+            if not fetcher:
+                continue
+            try:
+                prods = fetcher(w)
+            except requests.RequestException as e:
+                log(f"simulate: fetch failed for {w.get('name')}: {e}")
+                continue
+            if prods:
+                sample = dict(prods[0])
+                wname = w.get("name", "simulation")
+                break
+        if not sample:
+            sample = {"name": "HMT Sample Watch", "price": 2699,
+                      "url": "https://www.hmtwatches.store", "key": "demo"}
+            wname = "simulation"
+        log(f"Simulating restock of: {sample['name']} (from {wname})")
+        send_restock_alert(cfg, f"{wname} [TEST]", [sample])
+        log("Simulation sent. Your real state.json was NOT modified.")
+        return 0
 
     if args.loop:
         interval = int(cfg.get("poll_interval_seconds", 300))
