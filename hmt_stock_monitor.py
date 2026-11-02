@@ -56,6 +56,10 @@ DEFAULT_CONFIG = {
     "telegram_bot_token": "",
     "telegram_chat_id": "",
     "desktop_notification": True,
+    # Daily "still watching" heartbeat. heartbeat_hour is the server/UTC hour
+    # at/after which the once-a-day message may fire.
+    "heartbeat_enabled": True,
+    "heartbeat_hour": 9,
     "watchers": [
         {
             "name": "hmtwatches.store - For Him",
@@ -67,9 +71,25 @@ DEFAULT_CONFIG = {
             "enabled": True,
         },
         {
+            "name": "hmtwatches.store - For Her",
+            "type": "smartbiz",
+            "shop_id": 48236,
+            "division": "616aaf93-7f5c-435e-85fe-1f9da0ae62c7",
+            "category_name": "For Her",
+            "page_size": 100,
+            "enabled": True,
+        },
+        {
             "name": "hmtwatches.in - Mens",
             "type": "hmtwatches_in",
             "gender_type": 1,
+            "load_more_count": 500,
+            "enabled": True,
+        },
+        {
+            "name": "hmtwatches.in - Womens",
+            "type": "hmtwatches_in",
+            "gender_type": 2,
             "load_more_count": 500,
             "enabled": True,
         },
@@ -325,6 +345,43 @@ def check_watcher(cfg: dict, w: dict, state: dict) -> None:
     wstate["last_in_stock_count"] = len(in_stock)
 
 
+def maybe_send_heartbeat(cfg: dict, state: dict) -> None:
+    """Once per day, send a 'still watching' summary so you know it's alive.
+
+    Controlled by config: heartbeat_enabled (bool) and heartbeat_hour (0-23,
+    local server/UTC hour at/after which the daily heartbeat may fire).
+    """
+    if not cfg.get("heartbeat_enabled"):
+        return
+    now = datetime.now()
+    hb = state.setdefault("_heartbeat", {})
+    last = hb.get("last_date")
+    today = now.strftime("%Y-%m-%d")
+    hour_ok = now.hour >= int(cfg.get("heartbeat_hour", 9))
+    if last == today or not hour_ok:
+        return
+
+    # Build a per-watcher summary from the state we just updated.
+    lines = ["<b>🫀 HMT Stock Monitor — daily heartbeat</b>",
+             f"<i>{now.strftime('%Y-%m-%d %H:%M')}</i>", ""]
+    plain = []
+    for name, ws in state.items():
+        if name.startswith("_"):
+            continue
+        cnt = ws.get("last_in_stock_count", 0)
+        lines.append(f"• {html.escape(name)}: {cnt} in stock")
+        plain.append(f"{name}: {cnt} in stock")
+    lines.append("")
+    lines.append("Still watching. You'll get an alert the moment anything restocks.")
+    sent_tg = notify_telegram(cfg, "\n".join(lines))
+    sent_dt = notify_desktop(cfg, "HMT Stock Monitor — heartbeat", "\n".join(plain)[:400])
+    if sent_tg or sent_dt:
+        hb["last_date"] = today
+        log(f"Heartbeat sent -> telegram={sent_tg} desktop={sent_dt}")
+    else:
+        log("Heartbeat skipped (no notification channel delivered).")
+
+
 def check_all(cfg: dict) -> None:
     state = load_state()
     watchers = [w for w in cfg.get("watchers", []) if w.get("enabled", True)]
@@ -336,6 +393,7 @@ def check_all(cfg: dict) -> None:
             check_watcher(cfg, w, state)
         except Exception as e:  # never let one watcher kill the rest
             log(f"[{w.get('name', w.get('type'))}] unexpected error: {e}")
+    maybe_send_heartbeat(cfg, state)
     save_state(state)
 
 

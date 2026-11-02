@@ -5,6 +5,9 @@
   "telegram_chat_id": "",
   "desktop_notification": true,
 
+  "heartbeat_enabled": true,
+  "heartbeat_hour": 9,
+
   "watchers": [
     {
       "name": "hmtwatches.store - For Him",
@@ -16,9 +19,25 @@
       "enabled": true
     },
     {
+      "name": "hmtwatches.store - For Her",
+      "type": "smartbiz",
+      "shop_id": 48236,
+      "division": "616aaf93-7f5c-435e-85fe-1f9da0ae62c7",
+      "category_name": "For Her",
+      "page_size": 100,
+      "enabled": true
+    },
+    {
       "name": "hmtwatches.in - Mens",
       "type": "hmtwatches_in",
       "gender_type": 1,
+      "load_more_count": 500,
+      "enabled": true
+    },
+    {
+      "name": "hmtwatches.in - Womens",
+      "type": "hmtwatches_in",
+      "gender_type": 2,
       "load_more_count": 500,
       "enabled": true
     }
