@@ -1,25 +1,25 @@
 {
   "hmtwatches.store - For Him": {
     "in_stock_keys": [],
-    "last_check": "2026-11-09T02:37:53.431928",
+    "last_check": "2026-11-09T10:16:24.099502",
     "last_in_stock_count": 0
   },
   "hmtwatches.in - Mens": {
     "in_stock_keys": [],
-    "last_check": "2026-11-09T02:37:56.179006",
+    "last_check": "2026-11-09T10:16:27.633650",
     "last_in_stock_count": 0
   },
   "hmtwatches.store - For Her": {
     "in_stock_keys": [],
-    "last_check": "2026-11-09T02:37:54.092108",
+    "last_check": "2026-11-09T10:16:25.806053",
     "last_in_stock_count": 0
   },
   "hmtwatches.in - Womens": {
     "in_stock_keys": [],
-    "last_check": "2026-11-09T02:37:57.523783",
+    "last_check": "2026-11-09T10:16:29.280007",
     "last_in_stock_count": 0
   },
   "_heartbeat": {
-    "last_date": "2026-11-08"
+    "last_date": "2026-11-09"
   }
 }
